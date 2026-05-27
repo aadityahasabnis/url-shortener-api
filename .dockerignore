@@ -1,0 +1,16 @@
+.git
+.vscode
+node_modules
+dist
+coverage
+.env
+.env.*
+!.env.example
+prisma.config.js
+prisma.config.js.map
+prisma.config.d.ts
+prisma.config.d.ts.map
+src/generated
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
