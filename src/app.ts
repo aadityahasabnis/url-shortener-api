@@ -1,11 +1,28 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
+import { API_V1_PREFIX } from "./config/routes.config";
 import { healthRoutes } from "./modules/health/health.routes";
+import { createShortUrl, resolveShortUrl } from "./modules/url/url.service";
+import { urlRoutes } from "./modules/url/url.routes";
+import { registerErrorHandler } from "./plugins/error-handler";
 
-export function buildApp() {
+type BuildAppOptions = {
+    urlDependencies?: Parameters<typeof urlRoutes>[0];
+};
+
+function createDefaultUrlDependencies() {
+    return {
+        createShortUrl,
+        resolveShortUrl,
+    };
+}
+
+export function buildApp(options: BuildAppOptions = {}) {
     const app = Fastify({
         logger: true,
     });
+
+    const urlDependencies = options.urlDependencies ?? createDefaultUrlDependencies();
 
     app.register(cors, {
         origin: true,
@@ -16,7 +33,9 @@ export function buildApp() {
         service: "url-shortener-backend",
     }));
 
-    app.register(healthRoutes, { prefix: "/api/v1" });
+    registerErrorHandler(app);
+    app.register(healthRoutes, { prefix: API_V1_PREFIX });
+    app.register(urlRoutes(urlDependencies));
 
     return app;
 }

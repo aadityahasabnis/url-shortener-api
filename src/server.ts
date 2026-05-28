@@ -1,4 +1,4 @@
-import Fastify from "fastify";
+import { APP_CONFIG } from "./config/app.config";
 import { buildApp } from "./app";
 
 const start = async () => {
@@ -6,8 +6,8 @@ const start = async () => {
 
   try {
     await app.listen({
-      port: Number(process.env.PORT ?? 3000),
-      host: "0.0.0.0",
+      port: APP_CONFIG.port,
+      host: APP_CONFIG.host,
     });
 
     app.log.info("Server running");

@@ -13,8 +13,15 @@ datasource db {
 }
 
 model Url {
-  id          String   @id @default(cuid())
-  shortCode   String   @unique
+  id          String    @id @default(cuid())
+  shortCode   String    @unique
   originalUrl String
-  createdAt   DateTime @default(now())
+  clickCount  Int       @default(0)
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([createdAt])
+  @@index([isActive])
 }
