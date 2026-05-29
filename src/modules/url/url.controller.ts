@@ -1,74 +1,78 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { REDIRECT_BASE_PATH } from "../../config/routes.config";
 
+// ---------------------------------------
+// Request payload shapes
+// ---------------------------------------
 type CreateUrlBody = {
-  originalUrl: string;
-  shortCode?: string;
-  expiresAt?: string | null;
+    originalUrl: string;
+    shortCode?: string;
+    expiresAt?: string | null;
 };
 
 type ShortCodeParams = {
-  shortCode: string;
-};
-
-export type UrlControllerDependencies = {
-  createShortUrl: (input: {
-    originalUrl: string;
-    shortCode?: string;
-    expiresAt?: Date | null;
-  }) => Promise<{
-    id: string;
     shortCode: string;
-    originalUrl: string;
-    createdAt: Date;
-  }>;
-  resolveShortUrl: (shortCode: string) => Promise<{
-    originalUrl: string;
-  }>;
 };
 
-function buildShortUrl(request: FastifyRequest, shortCode: string) {
-  const host = request.headers["x-forwarded-host"] ?? request.headers.host ?? "localhost:3000";
-  const protocol = request.headers["x-forwarded-proto"] ?? request.protocol;
+// ---------------------------------------
+// Controller dependencies
+// ---------------------------------------
+export type UrlControllerDependencies = {
+    createShortUrl: (input: { originalUrl: string; shortCode?: string; expiresAt?: Date | null }) => Promise<{
+        id: string;
+        shortCode: string;
+        originalUrl: string;
+        createdAt: Date;
+    }>;
+    resolveShortUrl: (shortCode: string) => Promise<{
+        originalUrl: string;
+    }>;
+};
 
-  return `${protocol}://${host}${REDIRECT_BASE_PATH}/${shortCode}`;
+// ---------------------------------------
+// Short URL builder
+// ---------------------------------------
+function buildShortUrl(request: FastifyRequest, shortCode: string) {
+    const host = request.headers["x-forwarded-host"] ?? request.headers.host ?? "localhost:3000";
+    const protocol = request.headers["x-forwarded-proto"] ?? request.protocol;
+
+    return `${protocol}://${host}${REDIRECT_BASE_PATH}/${shortCode}`;
 }
 
 export function createUrlController(dependencies: UrlControllerDependencies) {
-  return {
-    async createUrlHandler(
-      request: FastifyRequest<{ Body: CreateUrlBody }>,
-      reply: FastifyReply,
-    ) {
-      const createInput = {
-        originalUrl: request.body.originalUrl,
-        ...(request.body.shortCode ? { shortCode: request.body.shortCode } : {}),
-        ...(request.body.expiresAt !== undefined
-          ? {
-              expiresAt:
-                request.body.expiresAt === null ? null : new Date(request.body.expiresAt),
-            }
-          : {}),
-      };
+    return {
+        async createUrlHandler(request: FastifyRequest, reply: FastifyReply) {
+            const body = request.body as CreateUrlBody;
 
-      const urlRecord = await dependencies.createShortUrl(createInput);
+            const createInput = {
+                originalUrl: body.originalUrl,
+                ...(body.shortCode ? { shortCode: body.shortCode } : {}),
+                ...(body.expiresAt !== undefined
+                    ? {
+                          expiresAt: body.expiresAt === null ? null : new Date(body.expiresAt),
+                      }
+                    : {}),
+            };
 
-      void reply.code(201).send({
-        id: urlRecord.id,
-        shortCode: urlRecord.shortCode,
-        originalUrl: urlRecord.originalUrl,
-        shortUrl: buildShortUrl(request, urlRecord.shortCode),
-        createdAt: urlRecord.createdAt,
-      });
-    },
+            const urlRecord = await dependencies.createShortUrl(createInput);
 
-    async redirectUrlHandler(
-      request: FastifyRequest<{ Params: ShortCodeParams }>,
-      reply: FastifyReply,
-    ) {
-      const urlRecord = await dependencies.resolveShortUrl(request.params.shortCode);
+            // Build the API response without exposing repository details.
+            return reply.code(201).send({
+                id: urlRecord.id,
+                shortCode: urlRecord.shortCode,
+                originalUrl: urlRecord.originalUrl,
+                shortUrl: buildShortUrl(request, urlRecord.shortCode),
+                createdAt: urlRecord.createdAt,
+            });
+        },
 
-      void reply.redirect(urlRecord.originalUrl);
-    },
-  };
+        async redirectUrlHandler(request: FastifyRequest, reply: FastifyReply) {
+            const params = request.params as ShortCodeParams;
+
+            const urlRecord = await dependencies.resolveShortUrl(params.shortCode);
+
+            // Redirect immediately after the service resolves the target URL.
+            return reply.redirect(urlRecord.originalUrl);
+        },
+    };
 }

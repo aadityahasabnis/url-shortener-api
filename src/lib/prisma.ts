@@ -2,33 +2,33 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient;
+    prisma?: PrismaClient;
 };
 
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL;
+    const connectionString = process.env.DATABASE_URL;
 
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is not set");
-  }
+    if (!connectionString) {
+        throw new Error("DATABASE_URL is not set");
+    }
 
-  const adapter = new PrismaPg({ connectionString });
+    const adapter = new PrismaPg({ connectionString });
 
-  return new PrismaClient({
-    adapter,
-  });
+    return new PrismaClient({
+        adapter,
+    });
 }
 
 export function getPrismaClient() {
-  if (globalForPrisma.prisma) {
-    return globalForPrisma.prisma;
-  }
+    if (globalForPrisma.prisma) {
+        return globalForPrisma.prisma;
+    }
 
-  const client = createPrismaClient();
+    const client = createPrismaClient();
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = client;
-  }
+    if (process.env.NODE_ENV !== "production") {
+        globalForPrisma.prisma = client;
+    }
 
-  return client;
+    return client;
 }
