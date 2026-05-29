@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { AppError } from "../common/errors/app-error";
+import { ERROR_CODES, ERROR_MESSAGES } from "../config/error.config";
+import { HTTP_STATUS } from "../config/http.config";
 
 type ValidationError = {
     validation?: Array<{ message: string; instancePath?: string }>;
@@ -19,9 +21,9 @@ export function registerErrorHandler(app: FastifyInstance) {
         const validationError = error as ValidationError;
 
         if (Array.isArray(validationError.validation)) {
-            return reply.status(400).send({
-                error: "VALIDATION_ERROR",
-                message: "Request validation failed",
+            return reply.status(HTTP_STATUS.badRequest).send({
+                error: ERROR_CODES.validationError,
+                message: ERROR_MESSAGES.requestValidationFailed,
                 details: validationError.validation.map((item) => ({
                     path: item.instancePath ?? "",
                     message: item.message,
@@ -29,9 +31,9 @@ export function registerErrorHandler(app: FastifyInstance) {
             });
         }
 
-        return reply.status(500).send({
-            error: "INTERNAL_SERVER_ERROR",
-            message: "An unexpected error occurred",
+        return reply.status(HTTP_STATUS.internalServerError).send({
+            error: ERROR_CODES.internalServerError,
+            message: ERROR_MESSAGES.unexpectedError,
         });
     });
 }

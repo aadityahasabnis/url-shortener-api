@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { REDIRECT_BASE_PATH } from "../../config/routes.config";
+import { HTTP_STATUS } from "../../config/http.config";
 
 // ---------------------------------------
 // Request payload shapes
@@ -36,7 +36,7 @@ function buildShortUrl(request: FastifyRequest, shortCode: string) {
     const host = request.headers["x-forwarded-host"] ?? request.headers.host ?? "localhost:3000";
     const protocol = request.headers["x-forwarded-proto"] ?? request.protocol;
 
-    return `${protocol}://${host}${REDIRECT_BASE_PATH}/${shortCode}`;
+    return `${protocol}://${host}/${shortCode}`;
 }
 
 export function createUrlController(dependencies: UrlControllerDependencies) {
@@ -57,7 +57,7 @@ export function createUrlController(dependencies: UrlControllerDependencies) {
             const urlRecord = await dependencies.createShortUrl(createInput);
 
             // Build the API response without exposing repository details.
-            return reply.code(201).send({
+            return reply.code(HTTP_STATUS.created).send({
                 id: urlRecord.id,
                 shortCode: urlRecord.shortCode,
                 originalUrl: urlRecord.originalUrl,
@@ -72,7 +72,7 @@ export function createUrlController(dependencies: UrlControllerDependencies) {
             const urlRecord = await dependencies.resolveShortUrl(params.shortCode);
 
             // Redirect immediately after the service resolves the target URL.
-            return reply.redirect(urlRecord.originalUrl);
+            return reply.code(HTTP_STATUS.found).redirect(urlRecord.originalUrl);
         },
     };
 }

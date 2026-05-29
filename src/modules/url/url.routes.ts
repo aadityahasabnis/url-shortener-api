@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
+import { HTTP_STATUS } from "../../config/http.config";
 import { getRedisConfig } from "../../config/redis.config";
-import { API_V1_PREFIX, REDIRECT_BASE_PATH } from "../../config/routes.config";
+import { API_PREFIX } from "../../config/routes.config";
 import { createRateLimitGuard } from "../../plugins/rate-limit";
 import { createUrlController, type UrlControllerDependencies } from "./url.controller";
 import { createUrlBodySchema, createUrlResponseSchema, redirectParamsSchema } from "./url.schema";
@@ -25,13 +26,13 @@ export function urlRoutes(dependencies: UrlControllerDependencies) {
     return async function registerUrlRoutes(app: FastifyInstance) {
         // Create short URL.
         app.post(
-            `${API_V1_PREFIX}/urls`,
+            `${API_PREFIX}/urls`,
             {
                 preHandler: createUrlRateLimit,
                 schema: {
                     body: createUrlBodySchema,
                     response: {
-                        201: createUrlResponseSchema,
+                        [HTTP_STATUS.created]: createUrlResponseSchema,
                     },
                 },
             },
@@ -40,7 +41,7 @@ export function urlRoutes(dependencies: UrlControllerDependencies) {
 
         // Resolve short URL.
         app.get(
-            `${REDIRECT_BASE_PATH}/:shortCode`,
+            `/:shortCode`,
             {
                 preHandler: redirectRateLimit,
                 schema: {

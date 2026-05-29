@@ -1,4 +1,4 @@
-const shortCodePattern = "^[a-zA-Z0-9_-]+$";
+import { URL_RULES } from "../../config/url.config";
 
 export const createUrlBodySchema = {
     type: "object",
@@ -12,9 +12,9 @@ export const createUrlBodySchema = {
         },
         shortCode: {
             type: "string",
-            minLength: 4,
-            maxLength: 32,
-            pattern: shortCodePattern,
+            minLength: URL_RULES.shortCodeMinLength,
+            maxLength: URL_RULES.shortCodeMaxLength,
+            pattern: URL_RULES.shortCodePattern,
         },
         expiresAt: {
             anyOf: [{ type: "string", format: "date-time" }, { type: "null" }],
@@ -42,9 +42,9 @@ export const redirectParamsSchema = {
     properties: {
         shortCode: {
             type: "string",
-            minLength: 1,
-            maxLength: 32,
-            pattern: shortCodePattern,
+            minLength: URL_RULES.redirectParamMinLength,
+            maxLength: URL_RULES.shortCodeMaxLength,
+            pattern: URL_RULES.shortCodePattern,
         },
     },
 } as const;

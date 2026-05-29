@@ -1,10 +1,11 @@
 import { AppError } from "../../common/errors/app-error";
+import { ERROR_CODES, ERROR_MESSAGES } from "../../config/error.config";
+import { HTTP_STATUS } from "../../config/http.config";
+import { URL_RULES } from "../../config/url.config";
 import { calculateUrlCacheTtlSeconds, createRedisUrlCache, type UrlRedirectCache, type UrlRedirectCacheRecord } from "./url.cache";
 import { createUrlRecord, findUrlByShortCode, incrementClickCount } from "./url.repository";
 import { generateShortCode } from "./short-code.generator";
 import type { CreateUrlInput } from "./url.types";
-
-const MAX_SHORT_CODE_ATTEMPTS = 5;
 
 // ---------------------------------------
 // Domain ports
@@ -46,33 +47,33 @@ function normalizeUrl(value: string) {
     try {
         return new URL(value).toString();
     } catch {
-        throw new AppError(400, "INVALID_URL", "The originalUrl value must be a valid URL");
+        throw new AppError(HTTP_STATUS.badRequest, ERROR_CODES.invalidUrl, ERROR_MESSAGES.invalidUrl);
     }
 }
 
 async function ensureShortCodeAvailability(repository: UrlRepository, shortCode: string) {
     const existingUrl = await repository.findUrlByShortCode(shortCode);
 
-    if (existingUrl) throw new AppError(409, "SHORT_CODE_TAKEN", "The requested short code is already in use");
+    if (existingUrl) throw new AppError(HTTP_STATUS.conflict, ERROR_CODES.shortCodeTaken, ERROR_MESSAGES.shortCodeTaken);
 }
 
 function validateExpirationDate(expiresAt: Date | null | undefined) {
     if (expiresAt === undefined || expiresAt === null) return;
 
-    if (Number.isNaN(expiresAt.getTime())) throw new AppError(400, "INVALID_EXPIRES_AT", "expiresAt must be a valid date-time value");
+    if (Number.isNaN(expiresAt.getTime())) throw new AppError(HTTP_STATUS.badRequest, ERROR_CODES.invalidExpiresAt, ERROR_MESSAGES.invalidExpiresAt);
 
-    if (expiresAt.getTime() <= Date.now()) throw new AppError(400, "INVALID_EXPIRES_AT", "expiresAt must be in the future");
+    if (expiresAt.getTime() <= Date.now()) throw new AppError(HTTP_STATUS.badRequest, ERROR_CODES.invalidExpiresAt, ERROR_MESSAGES.expiresAtInFuture);
 }
 
 async function generateUniqueShortCode(repository: UrlRepository, shortCodeGenerator: typeof generateShortCode) {
-    for (let attempt = 0; attempt < MAX_SHORT_CODE_ATTEMPTS; attempt += 1) {
+    for (let attempt = 0; attempt < URL_RULES.shortCodeAttempts; attempt += 1) {
         const candidate = shortCodeGenerator();
         const existingUrl = await repository.findUrlByShortCode(candidate);
 
         if (!existingUrl) return candidate;
     }
 
-    throw new AppError(500, "SHORT_CODE_GENERATION_FAILED", "Unable to generate a unique short code");
+    throw new AppError(HTTP_STATUS.internalServerError, ERROR_CODES.shortCodeGenerationFailed, ERROR_MESSAGES.shortCodeGenerationFailed);
 }
 
 // ---------------------------------------
@@ -131,14 +132,14 @@ export function createUrlService(dependencies: Partial<UrlServiceDependencies> =
             const urlRecord = await repository.findUrlByShortCode(shortCode);
 
             if (!urlRecord) {
-                throw new AppError(404, "URL_NOT_FOUND", "The requested short URL does not exist");
+                throw new AppError(HTTP_STATUS.notFound, ERROR_CODES.urlNotFound, ERROR_MESSAGES.urlNotFound);
             }
 
             if (!urlRecord.isActive) {
-                throw new AppError(410, "URL_DISABLED", "The requested short URL is no longer active");
+                throw new AppError(HTTP_STATUS.gone, ERROR_CODES.urlDisabled, ERROR_MESSAGES.urlDisabled);
             }
 
-            if (urlRecord.expiresAt && urlRecord.expiresAt.getTime() <= now()) throw new AppError(410, "URL_EXPIRED", "The requested short URL has expired");
+            if (urlRecord.expiresAt && urlRecord.expiresAt.getTime() <= now()) throw new AppError(HTTP_STATUS.gone, ERROR_CODES.urlExpired, ERROR_MESSAGES.urlExpired);
 
             // Click count updates should not break the redirect path.
             void repository.incrementClickCount(urlRecord.id).catch(() => undefined);

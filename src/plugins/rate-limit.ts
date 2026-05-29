@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { AppError } from "../common/errors/app-error";
+import { ERROR_CODES, ERROR_MESSAGES } from "../config/error.config";
+import { HTTP_STATUS } from "../config/http.config";
 import { getRedisConfig } from "../config/redis.config";
 import { getRedisClient } from "../lib/redis";
 
@@ -47,7 +49,7 @@ function enforceMemoryLimit(key: string, max: number, windowMs: number) {
 
     if (bucket.timestamps.length >= max) {
         memoryBuckets.set(key, bucket);
-        throw new AppError(429, "RATE_LIMIT_EXCEEDED", "Too many requests. Please try again later.");
+        throw new AppError(HTTP_STATUS.tooManyRequests, ERROR_CODES.rateLimitExceeded, ERROR_MESSAGES.rateLimitExceeded);
     }
 
     bucket.timestamps.push(now);
@@ -94,7 +96,7 @@ async function enforceRedisLimit(key: string, max: number, windowMs: number) {
         },
     )) as number;
 
-    if (allowed !== 1) throw new AppError(429, "RATE_LIMIT_EXCEEDED", "Too many requests. Please try again later.");
+    if (allowed !== 1) throw new AppError(HTTP_STATUS.tooManyRequests, ERROR_CODES.rateLimitExceeded, ERROR_MESSAGES.rateLimitExceeded);
 }
 
 export function createRateLimitGuard(options: RateLimitOptions) {

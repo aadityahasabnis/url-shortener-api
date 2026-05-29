@@ -77,7 +77,7 @@ describe("url routes", () => {
 
         const response = await app.inject({
             method: "GET",
-            url: "/r/goDocs",
+            url: "/goDocs",
         });
 
         assert.equal(response.statusCode, 302);
@@ -101,7 +101,7 @@ describe("url routes", () => {
     it("returns 404 when short code does not exist", async () => {
         const response = await app.inject({
             method: "GET",
-            url: "/r/missingCode",
+            url: "/missingCode",
         });
 
         assert.equal(response.statusCode, 404);

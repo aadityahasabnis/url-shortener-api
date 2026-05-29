@@ -1,8 +1,10 @@
-const DEFAULT_REDIS_KEY_PREFIX = "url-shortener";
-const DEFAULT_URL_CACHE_TTL_SECONDS = 3600;
-const DEFAULT_RATE_LIMIT_WINDOW_SECONDS = 60;
-const DEFAULT_RATE_LIMIT_CREATE_MAX = 20;
-const DEFAULT_RATE_LIMIT_REDIRECT_MAX = 120;
+const REDIS_DEFAULTS = {
+    keyPrefix: "url-shortener",
+    urlCacheTtlSeconds: 3600,
+    rateLimitWindowSeconds: 60,
+    rateLimitCreateMax: 20,
+    rateLimitRedirectMax: 120,
+} as const;
 
 // ---------------------------------------
 // Redis configuration and utilities
@@ -23,10 +25,10 @@ export function getRedisConfig() {
     return {
         enabled: url.length > 0,
         url,
-        keyPrefix: process.env.REDIS_KEY_PREFIX?.trim() || DEFAULT_REDIS_KEY_PREFIX,
-        urlCacheTtlSeconds: parsePositiveInteger(process.env.REDIS_URL_CACHE_TTL_SECONDS, DEFAULT_URL_CACHE_TTL_SECONDS),
-        rateLimitWindowSeconds: parsePositiveInteger(process.env.REDIS_RATE_LIMIT_WINDOW_SECONDS, DEFAULT_RATE_LIMIT_WINDOW_SECONDS),
-        rateLimitCreateMax: parsePositiveInteger(process.env.REDIS_RATE_LIMIT_CREATE_MAX, DEFAULT_RATE_LIMIT_CREATE_MAX),
-        rateLimitRedirectMax: parsePositiveInteger(process.env.REDIS_RATE_LIMIT_REDIRECT_MAX, DEFAULT_RATE_LIMIT_REDIRECT_MAX),
+        keyPrefix: process.env.REDIS_KEY_PREFIX?.trim() || REDIS_DEFAULTS.keyPrefix,
+        urlCacheTtlSeconds: parsePositiveInteger(process.env.REDIS_URL_CACHE_TTL_SECONDS, REDIS_DEFAULTS.urlCacheTtlSeconds),
+        rateLimitWindowSeconds: parsePositiveInteger(process.env.REDIS_RATE_LIMIT_WINDOW_SECONDS, REDIS_DEFAULTS.rateLimitWindowSeconds),
+        rateLimitCreateMax: parsePositiveInteger(process.env.REDIS_RATE_LIMIT_CREATE_MAX, REDIS_DEFAULTS.rateLimitCreateMax),
+        rateLimitRedirectMax: parsePositiveInteger(process.env.REDIS_RATE_LIMIT_REDIRECT_MAX, REDIS_DEFAULTS.rateLimitRedirectMax),
     } as const;
 }

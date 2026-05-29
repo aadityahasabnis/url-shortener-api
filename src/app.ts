@@ -1,6 +1,6 @@
 import cors from "@fastify/cors";
 import Fastify from "fastify";
-import { API_V1_PREFIX } from "./config/routes.config";
+import { API_PREFIX } from "./config/routes.config";
 import { healthRoutes } from "./modules/health/health.routes";
 import { createShortUrl, resolveShortUrl } from "./modules/url/url.service";
 import { urlRoutes } from "./modules/url/url.routes";
@@ -43,7 +43,7 @@ export function buildApp(options: BuildAppOptions = {}) {
     // Feature routes
     // ---------------------------------------
     registerErrorHandler(app);
-    app.register(healthRoutes, { prefix: API_V1_PREFIX });
+    app.register(healthRoutes, { prefix: API_PREFIX });
     app.register(urlRoutes(urlDependencies));
 
     return app;

@@ -1,7 +1,6 @@
+import { URL_RULES } from "../../config/url.config";
 import { getRedisConfig } from "../../config/redis.config";
 import { getRedisClient } from "../../lib/redis";
-
-const URL_CACHE_NAMESPACE = "url:redirect";
 
 // ---------------------------------------
 // URL cache contract
@@ -21,7 +20,7 @@ export type UrlRedirectCache = {
 export function buildUrlCacheKey(shortCode: string) {
     const config = getRedisConfig();
 
-    return `${config.keyPrefix}:${URL_CACHE_NAMESPACE}:${shortCode}`;
+    return `${config.keyPrefix}:${URL_RULES.cacheNamespace}:${shortCode}`;
 }
 
 export function calculateUrlCacheTtlSeconds(expiresAt: Date | null | undefined) {
